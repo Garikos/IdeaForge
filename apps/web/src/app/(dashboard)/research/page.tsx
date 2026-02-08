@@ -4,10 +4,11 @@ import { useState, useEffect, useRef } from "react";
 import { useResearchStore } from "@/lib/stores/researchStore";
 import { ResearchForm } from "@/components/research/ResearchForm";
 import { AgentActivityFeed } from "@/components/agents/AgentActivityFeed";
+import { TokenUsageWidget } from "@/components/research/TokenUsageWidget";
 import { IdeaCard } from "@/components/research/IdeaCard";
 import { api } from "@/lib/api";
 import { WebSocketClient } from "@/lib/websocket";
-import type { ResearchRun, IdeaListResponse } from "@/types/research";
+import type { ResearchRun, IdeaListResponse, TokenUsageEvent } from "@/types/research";
 
 export default function ResearchPage() {
   const {
@@ -20,6 +21,7 @@ export default function ResearchPage() {
     setLoading,
     updateAgentStatus,
     setError,
+    setTokenUsage,
   } = useResearchStore();
 
   const [wsConnected, setWsConnected] = useState(false);
@@ -34,8 +36,7 @@ export default function ResearchPage() {
       setWsConnected(connected);
     });
 
-    client.on("research_started", (data) => {
-      const d = data as Record<string, string>;
+    client.on("research_started", () => {
       setStartTime(Date.now());
     });
 
@@ -72,8 +73,7 @@ export default function ResearchPage() {
       });
     });
 
-    client.on("research_completed", (data) => {
-      const d = data as Record<string, string>;
+    client.on("research_completed", () => {
       setLoading(false);
       loadIdeas();
     });
@@ -82,6 +82,15 @@ export default function ResearchPage() {
       const d = data as Record<string, string>;
       setError(d.error ?? "Произошла ошибка исследования");
       setLoading(false);
+    });
+
+    client.on("research_cancelled", () => {
+      setLoading(false);
+      setError(null);
+    });
+
+    client.on("token_usage", (data) => {
+      setTokenUsage(data as unknown as TokenUsageEvent);
     });
 
     client.on("research_results", (data) => {
@@ -110,9 +119,7 @@ export default function ResearchPage() {
     setLoading(true);
     setError(null);
     setStartTime(Date.now());
-    // Clear previous statuses
-    useResearchStore.getState().agentStatuses.length = 0;
-    useResearchStore.setState({ agentStatuses: [], ideas: [] });
+    useResearchStore.setState({ agentStatuses: [], ideas: [], tokenUsage: null });
 
     try {
       const run = (await api.startResearch({ query, sources, llm_provider: llmProvider })) as ResearchRun;
@@ -123,11 +130,26 @@ export default function ResearchPage() {
     }
   };
 
+  const handleCancelResearch = async () => {
+    const runId = currentRun?.run_id;
+    if (!runId) return;
+    try {
+      await api.cancelResearch(runId);
+    } catch {
+      // Cancel may fail if already finished
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="max-w-6xl">
       <h1 className="text-2xl font-bold mb-6">Исследование рынка</h1>
 
-      <ResearchForm onSubmit={handleStartResearch} isLoading={isLoading} />
+      <ResearchForm
+        onSubmit={handleStartResearch}
+        onCancel={handleCancelResearch}
+        isLoading={isLoading}
+      />
 
       {(currentRun || isLoading || error) && (
         <div className="mt-8">
@@ -137,6 +159,9 @@ export default function ResearchPage() {
             wsConnected={wsConnected}
             error={error}
           />
+          <div className="mt-3">
+            <TokenUsageWidget />
+          </div>
         </div>
       )}
 

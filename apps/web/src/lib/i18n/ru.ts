@@ -49,6 +49,13 @@ export const ru = {
     news: "Новости",
     economy: "Экономика",
   },
+  tokenUsage: {
+    title: "Использование токенов",
+    ok: "В норме",
+    approaching: "Приближается к лимиту",
+    exceeded: "Лимит превышен",
+    calls: "вызовов LLM",
+  },
   common: {
     free: "Бесплатно",
     paid: "Платно",

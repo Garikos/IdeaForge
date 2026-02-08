@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.0] - 2026-02-08
+
+### Added
+- **Rate limit handling** — automatic retry with backoff on 429 errors via litellm (`num_retries=3`, `timeout=120`)
+- **Token usage tracking** — `TokenTracker` module with thread-safe counting and real-time WS broadcasting
+- **Token usage widget** — real-time progress bar with three states: green (<70%), yellow (70-100%), red (>100% TPM)
+- **Research cancellation** — "Остановить" button to cancel running research; uses `asyncio.Task.cancel()` + `threading.Event` for dual-layer cancellation
+- `POST /research/{run_id}/cancel` API endpoint
+- `rate_limits` configuration for all LLM providers (TPM, RPM, RPD)
+- `token_usage` and `research_cancelled` WebSocket events
+- `litellm.success_callback` integration for intercepting token usage from all LLM calls
+
+### Fixed
+- **Groq model decommissioned** — `llama-3.1-70b-versatile` replaced with `llama-3.3-70b-versatile`
+
 ## [0.2.0] - 2026-02-08
 
 ### Fixed

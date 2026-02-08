@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { BusinessIdea, ResearchRun } from "@/types/research";
+import type { BusinessIdea, ResearchRun, TokenUsageEvent } from "@/types/research";
 import type { AgentRunStatus } from "@/types/agent";
 
 interface ResearchState {
@@ -9,12 +9,14 @@ interface ResearchState {
   totalIdeas: number;
   isLoading: boolean;
   error: string | null;
+  tokenUsage: TokenUsageEvent | null;
   setCurrentRun: (run: ResearchRun | null) => void;
   setAgentStatuses: (statuses: AgentRunStatus[]) => void;
   updateAgentStatus: (status: AgentRunStatus) => void;
   setIdeas: (ideas: BusinessIdea[], total: number) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+  setTokenUsage: (usage: TokenUsageEvent | null) => void;
 }
 
 export const useResearchStore = create<ResearchState>((set) => ({
@@ -24,6 +26,7 @@ export const useResearchStore = create<ResearchState>((set) => ({
   totalIdeas: 0,
   isLoading: false,
   error: null,
+  tokenUsage: null,
 
   setCurrentRun: (run) => set({ currentRun: run }),
 
@@ -46,4 +49,5 @@ export const useResearchStore = create<ResearchState>((set) => ({
   setIdeas: (ideas, total) => set({ ideas, totalIdeas: total }),
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
+  setTokenUsage: (tokenUsage) => set({ tokenUsage }),
 }));

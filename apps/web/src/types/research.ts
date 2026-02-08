@@ -32,3 +32,14 @@ export interface IdeaListResponse {
   items: BusinessIdea[];
   total: number;
 }
+
+export interface TokenUsageEvent {
+  type: "token_usage";
+  run_id: string;
+  provider: string;
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  llm_calls: number;
+  tpm_limit: number | null;
+}

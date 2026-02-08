@@ -16,10 +16,11 @@ const PRESETS: Record<string, string[]> = {
 
 interface Props {
   onSubmit: (query: string, sources: string[], llmProvider: string) => void;
+  onCancel?: () => void;
   isLoading: boolean;
 }
 
-export function ResearchForm({ onSubmit, isLoading }: Props) {
+export function ResearchForm({ onSubmit, onCancel, isLoading }: Props) {
   const [query, setQuery] = useState("");
   const [selectedSources, setSelectedSources] = useState<string[]>(PRESETS.minimal);
 
@@ -75,18 +76,30 @@ export function ResearchForm({ onSubmit, isLoading }: Props) {
         />
       </div>
 
-      <button
-        type="submit"
-        disabled={isLoading || !query.trim() || selectedSources.length === 0}
-        className={cn(
-          "px-6 py-2.5 rounded-lg text-sm font-medium transition-colors",
-          isLoading
-            ? "bg-[var(--muted)] text-[var(--muted-foreground)] cursor-not-allowed"
-            : "bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90"
+      <div className="flex gap-3">
+        <button
+          type="submit"
+          disabled={isLoading || !query.trim() || selectedSources.length === 0}
+          className={cn(
+            "px-6 py-2.5 rounded-lg text-sm font-medium transition-colors",
+            isLoading
+              ? "bg-[var(--muted)] text-[var(--muted-foreground)] cursor-not-allowed"
+              : "bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90"
+          )}
+        >
+          {isLoading ? "Исследование запущено..." : "Начать исследование"}
+        </button>
+
+        {isLoading && onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-6 py-2.5 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors"
+          >
+            Остановить
+          </button>
         )}
-      >
-        {isLoading ? "Исследование запущено..." : "Начать исследование"}
-      </button>
+      </div>
     </form>
   );
 }

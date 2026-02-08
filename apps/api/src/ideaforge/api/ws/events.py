@@ -54,3 +54,10 @@ def research_failed(run_id: str, error: str) -> dict[str, Any]:
         "run_id": run_id,
         "error": error,
     }
+
+
+def research_cancelled(run_id: str) -> dict[str, Any]:
+    return {
+        "type": "research_cancelled",
+        "run_id": run_id,
+    }

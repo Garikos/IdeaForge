@@ -21,6 +21,9 @@ export const api = {
 
   getIdea: (id: number) => fetchApi(`/ideas/${id}`),
 
+  cancelResearch: (runId: string) =>
+    fetchApi(`/research/${runId}/cancel`, { method: "POST" }),
+
   // Agents
   getAgents: () => fetchApi("/agents"),
   getAgentRuns: (runId: string) => fetchApi(`/agents/runs/${runId}`),

@@ -53,11 +53,12 @@ class Settings(BaseSettings):
 # LLM provider configurations
 LLM_PROVIDERS: dict[str, dict] = {
     "groq": {
-        "model": "groq/llama-3.1-70b-versatile",
+        "model": "groq/llama-3.3-70b-versatile",
         "cost": "free",
         "speed": "ultra-fast",
         "requires_key": "groq_api_key",
-        "description": "Groq — Llama 3.1 70B (бесплатно, 14K req/день)",
+        "description": "Groq — Llama 3.3 70B (бесплатно, 14K req/день)",
+        "rate_limits": {"tpm": 12_000, "rpm": 30, "rpd": 14_400},
     },
     "gemini": {
         "model": "gemini/gemini-2.5-flash",
@@ -65,6 +66,7 @@ LLM_PROVIDERS: dict[str, dict] = {
         "speed": "fast",
         "requires_key": "gemini_api_key",
         "description": "Google Gemini 2.5 Flash (бесплатно, 250-1000 req/день)",
+        "rate_limits": {"tpm": 1_000_000, "rpm": 15, "rpd": 1_000},
     },
     "ollama": {
         "model": "ollama/llama3.1",
@@ -73,6 +75,7 @@ LLM_PROVIDERS: dict[str, dict] = {
         "speed": "medium",
         "requires_key": None,
         "description": "Ollama — локальная модель (бесплатно, без лимитов)",
+        "rate_limits": None,
     },
     "openrouter": {
         "model": "openrouter/deepseek/deepseek-chat-v3-0324:free",
@@ -80,6 +83,7 @@ LLM_PROVIDERS: dict[str, dict] = {
         "speed": "fast",
         "requires_key": "openrouter_api_key",
         "description": "OpenRouter — DeepSeek V3 free (50 req/день)",
+        "rate_limits": {"tpm": 200_000, "rpm": 20, "rpd": 50},
     },
     "cerebras": {
         "model": "cerebras/llama-3.1-70b",
@@ -87,6 +91,7 @@ LLM_PROVIDERS: dict[str, dict] = {
         "speed": "ultra-fast",
         "requires_key": "cerebras_api_key",
         "description": "Cerebras — Llama 3.1 70B (бесплатно, 30 RPM)",
+        "rate_limits": {"tpm": 60_000, "rpm": 30, "rpd": 14_400},
     },
     "deepseek": {
         "model": "deepseek/deepseek-chat",
@@ -94,6 +99,7 @@ LLM_PROVIDERS: dict[str, dict] = {
         "speed": "fast",
         "requires_key": "deepseek_api_key",
         "description": "DeepSeek V3 ($0.028/1M tokens)",
+        "rate_limits": None,
     },
     "openai": {
         "model": "openai/gpt-4o-mini",
@@ -101,6 +107,7 @@ LLM_PROVIDERS: dict[str, dict] = {
         "speed": "fast",
         "requires_key": "openai_api_key",
         "description": "OpenAI GPT-4o-mini ($0.15/1M tokens)",
+        "rate_limits": None,
     },
     "anthropic": {
         "model": "anthropic/claude-haiku-4-5",
@@ -108,6 +115,7 @@ LLM_PROVIDERS: dict[str, dict] = {
         "speed": "fast",
         "requires_key": "anthropic_api_key",
         "description": "Anthropic Claude Haiku 4.5 ($1/1M tokens)",
+        "rate_limits": None,
     },
 }
 

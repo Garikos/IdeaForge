@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, BackgroundTasks, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import select, func as sa_func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -48,6 +48,17 @@ async def start_research(
         llm_provider=req.llm_provider,
         created_at=datetime.now(timezone.utc),
     )
+
+
+@router.post("/research/{run_id}/cancel")
+async def cancel_research(run_id: str):
+    """Cancel a running research pipeline."""
+    from ...services.research_service import cancel_research as do_cancel
+
+    cancelled = await do_cancel(run_id)
+    if not cancelled:
+        raise HTTPException(status_code=404, detail="Research run not found or already finished")
+    return {"status": "cancelled", "run_id": run_id}
 
 
 @router.get("/ideas", response_model=IdeaListResponse)

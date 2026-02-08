@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import threading
 from pathlib import Path
 from typing import Any, Callable
 
@@ -12,7 +13,12 @@ from pydantic import BaseModel
 from crewai import Agent, Crew, Task, Process
 
 from ...core.llm_registry import get_llm
+from ...core.token_tracker import TokenTracker
 from ..tools import TOOL_REGISTRY, SentimentAnalysisTool
+
+
+class ResearchCancelledError(Exception):
+    """Raised when research is cancelled by user."""
 
 
 class BusinessIdeaItem(BaseModel):
@@ -46,6 +52,8 @@ class ResearchCrew:
         on_agent_start: Callable | None = None,
         on_agent_complete: Callable | None = None,
         on_agent_error: Callable | None = None,
+        token_tracker: TokenTracker | None = None,
+        cancel_event: threading.Event | None = None,
     ) -> list[dict[str, Any]]:
         """Build and run a research crew.
 
@@ -57,13 +65,15 @@ class ResearchCrew:
             on_agent_start: Callback when an agent starts.
             on_agent_complete: Callback when an agent finishes.
             on_agent_error: Callback when an agent fails.
+            token_tracker: Optional token usage tracker.
+            cancel_event: Optional threading event to signal cancellation.
 
         Returns:
             List of business ideas as dicts.
         """
         agents_config = _load_yaml("agents.yaml")
         tasks_config = _load_yaml("tasks.yaml")
-        llm = get_llm(llm_provider)
+        llm = get_llm(llm_provider, token_tracker=token_tracker)
 
         agents: list[Agent] = []
         tasks: list[Task] = []
@@ -161,9 +171,11 @@ class ResearchCrew:
             sources=selected_sources,
         )
 
-        # Notify about each agent before kickoff
+        # Notify about each agent before kickoff, check cancellation
         agent_names = selected_sources + ["sentiment", "synthesizer"]
         for name in agent_names:
+            if cancel_event and cancel_event.is_set():
+                raise ResearchCancelledError("Research cancelled by user")
             if on_agent_start:
                 try:
                     on_agent_start(name)

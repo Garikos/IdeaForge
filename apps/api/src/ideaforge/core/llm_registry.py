@@ -4,17 +4,25 @@ from __future__ import annotations
 
 import os
 
+import structlog
 from crewai import LLM
 
 from ..config import LLM_PROVIDERS, settings
+from .token_tracker import TokenTracker
+
+logger = structlog.get_logger()
 
 
-def get_llm(provider: str | None = None) -> LLM:
+def get_llm(
+    provider: str | None = None,
+    token_tracker: TokenTracker | None = None,
+) -> LLM:
     """Create a CrewAI LLM instance for the given provider.
 
     Args:
         provider: LLM provider ID (groq, gemini, ollama, etc.).
                   Defaults to settings.llm_provider.
+        token_tracker: Optional token tracker for usage monitoring.
 
     Returns:
         Configured LLM instance ready for CrewAI agents.
@@ -38,7 +46,33 @@ def get_llm(provider: str | None = None) -> LLM:
     if "base_url" in config:
         kwargs["base_url"] = config["base_url"]
 
+    # Retry/backoff for rate limits (litellm native)
+    kwargs["num_retries"] = 3
+    kwargs["timeout"] = 120
+
+    # Wire token tracking via litellm global callback
+    if token_tracker:
+        _install_token_callback(token_tracker)
+
     return LLM(model=model, **kwargs)
+
+
+def _install_token_callback(tracker: TokenTracker) -> None:
+    """Install a litellm global success callback for token tracking."""
+    import litellm
+
+    def _on_success(kwargs, completion_response, start_time, end_time):
+        try:
+            usage = getattr(completion_response, "usage", None)
+            if usage:
+                tracker.record(
+                    prompt_tokens=getattr(usage, "prompt_tokens", 0) or 0,
+                    completion_tokens=getattr(usage, "completion_tokens", 0) or 0,
+                )
+        except Exception as e:
+            logger.debug("Token callback error", error=str(e))
+
+    litellm.success_callback = [_on_success]
 
 
 def _set_provider_env(provider: str, api_key: str):

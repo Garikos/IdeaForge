@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import threading
 from typing import Any
 
 import structlog
@@ -16,7 +17,8 @@ from ..api.ws.events import (
     research_started,
 )
 from ..api.ws.manager import ws_manager
-from ..config import AGENT_REGISTRY
+from ..config import AGENT_REGISTRY, LLM_PROVIDERS
+from ..core.token_tracker import TokenTracker
 
 logger = structlog.get_logger()
 
@@ -41,6 +43,7 @@ class Coordinator:
         query: str,
         sources: list[str],
         llm_provider: str,
+        cancel_event: threading.Event | None = None,
     ) -> list[dict[str, Any]]:
         """Run a research pipeline with selected sources."""
         logger.info("Starting research", run_id=run_id, query=query, sources=sources)
@@ -66,6 +69,22 @@ class Coordinator:
             async def on_error(name, error):
                 await ws_manager.broadcast("research", agent_failed(run_id, name, error))
 
+            async def on_token_update(snapshot: dict):
+                await ws_manager.broadcast("research", snapshot)
+
+            # Get rate limit info for the provider
+            provider_config = LLM_PROVIDERS.get(llm_provider, {})
+            rate_limits = provider_config.get("rate_limits")
+            tpm_limit = rate_limits.get("tpm") if rate_limits else None
+
+            # Create token tracker with WS callback
+            tracker = TokenTracker(
+                run_id=run_id,
+                provider=llm_provider,
+                tpm_limit=tpm_limit,
+                on_update=_make_callback(loop, on_token_update),
+            )
+
             crew = ResearchCrew()
             results = await asyncio.to_thread(
                 crew.run,
@@ -76,8 +95,12 @@ class Coordinator:
                 on_agent_start=_make_callback(loop, on_start),
                 on_agent_complete=_make_callback(loop, on_complete),
                 on_agent_error=_make_callback(loop, on_error),
+                token_tracker=tracker,
+                cancel_event=cancel_event,
             )
 
+            # Broadcast final token usage + completion
+            await ws_manager.broadcast("research", tracker.snapshot())
             await ws_manager.broadcast(
                 "research",
                 research_completed(run_id, len(results)),

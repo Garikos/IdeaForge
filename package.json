@@ -1,0 +1,22 @@
+{
+  "name": "ideaforge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "IdeaForge — мульти-агентная платформа для поиска бизнес-идей",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "dev:web": "pnpm --filter web dev",
+    "dev:api": "cd apps/api && uv run uvicorn src.ideaforge.main:app --reload --host 0.0.0.0 --port 8000",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0"
+  },
+  "packageManager": "pnpm@10.29.1",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

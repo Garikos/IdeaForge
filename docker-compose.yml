@@ -1,0 +1,28 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ideaforge-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ideaforge
+      POSTGRES_USER: ideaforge
+      POSTGRES_PASSWORD: ideaforge_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: ideaforge-chromadb
+    restart: unless-stopped
+    ports:
+      - "8100:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      ANONYMIZED_TELEMETRY: "false"
+
+volumes:
+  postgres_data:
+  chroma_data:

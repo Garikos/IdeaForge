@@ -1,0 +1,62 @@
+export const ru = {
+  app: {
+    name: "IdeaForge",
+    tagline: "Мульти-агентная платформа для поиска бизнес-идей",
+  },
+  nav: {
+    dashboard: "Главная",
+    research: "Исследование",
+    agents: "Агенты",
+    settings: "Настройки",
+  },
+  research: {
+    title: "Исследование рынка",
+    queryPlaceholder: "Опишите область для поиска бизнес-идей...",
+    startButton: "Начать исследование",
+    stopButton: "Остановить",
+    sources: "Источники данных",
+    results: "Результаты",
+    noResults: "Пока нет результатов. Запустите исследование.",
+    presets: {
+      all: "Все",
+      techFocus: "Тех-фокус",
+      businessFocus: "Бизнес-фокус",
+      minimal: "Минимум (быстро)",
+    },
+  },
+  agents: {
+    title: "Агенты",
+    status: {
+      pending: "Ожидание",
+      running: "Работает",
+      completed: "Завершён",
+      failed: "Ошибка",
+    },
+  },
+  settings: {
+    title: "Настройки",
+    llmProvider: "LLM Провайдер",
+    llmDescription: "Выберите модель для работы агентов",
+    testConnection: "Проверить подключение",
+    agentsSection: "Агенты-исследователи",
+    agentsDescription: "Включите/выключите источники данных",
+  },
+  categories: {
+    search_trends: "Поисковые тренды",
+    social: "Социальные платформы",
+    content: "Контент и видео",
+    tech: "Технологии",
+    news: "Новости",
+    economy: "Экономика",
+  },
+  common: {
+    free: "Бесплатно",
+    paid: "Платно",
+    enabled: "Включён",
+    disabled: "Выключен",
+    loading: "Загрузка...",
+    error: "Ошибка",
+    save: "Сохранить",
+    cancel: "Отмена",
+  },
+} as const;

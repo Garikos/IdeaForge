@@ -1,0 +1,42 @@
+# IdeaForge Task Definitions
+# Templates for research tasks — {query} is replaced at runtime
+
+research_source_task:
+  description: >
+    Research the topic "{query}" using your specialized data source.
+    Collect relevant data points including:
+    - Trending topics and keywords
+    - Community discussions and pain points
+    - Growth metrics and engagement data
+    - Relevant URLs and sources
+
+    Focus on finding signals that indicate business opportunities.
+    Return your findings as structured text with key data points.
+  expected_output: >
+    A structured report with:
+    - Top 5-10 relevant findings
+    - Key trends and patterns
+    - Pain points or unmet needs discovered
+    - URLs and sources for each finding
+    - Growth/engagement metrics where available
+
+synthesize_task:
+  description: >
+    You have received research findings from multiple agents about "{query}".
+    Analyze ALL findings and create a ranked list of business ideas.
+
+    For each idea, provide:
+    1. title — concise business idea name
+    2. summary — 2-3 sentence description
+    3. source — which agent/source found this
+    4. source_url — most relevant URL
+    5. business_potential — score 0.0-1.0
+    6. market_size_score — score 0.0-1.0
+    7. competition_score — score 0.0-1.0 (lower = less competition = better)
+    8. sentiment_score — score 0.0-1.0
+
+    Return ONLY valid JSON array of ideas, sorted by composite score (average of all scores).
+  expected_output: >
+    A JSON array of 5-15 business ideas, each with:
+    title, summary, source, source_url,
+    business_potential, market_size_score, competition_score, sentiment_score

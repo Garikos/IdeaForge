@@ -8,10 +8,21 @@ from typing import Any, Callable
 
 import yaml
 import structlog
+from pydantic import BaseModel
 from crewai import Agent, Crew, Task, Process
 
 from ...core.llm_registry import get_llm
 from ..tools import TOOL_REGISTRY, SentimentAnalysisTool
+
+
+class BusinessIdeaItem(BaseModel):
+    title: str = ""
+    summary: str = ""
+    source: str = ""
+    business_potential: float = 0.0
+    market_size_score: float = 0.0
+    competition_score: float = 0.0
+    sentiment_score: float = 0.0
 
 logger = structlog.get_logger()
 
@@ -132,7 +143,6 @@ class ResearchCrew:
             description=synth_task_cfg.get("description", "Synthesize findings for {query}").format(query=query),
             expected_output=synth_task_cfg.get("expected_output", "JSON array of business ideas"),
             agent=synthesizer,
-            output_json=True,
         )
         tasks.append(synth_task)
 
@@ -151,7 +161,24 @@ class ResearchCrew:
             sources=selected_sources,
         )
 
+        # Notify about each agent before kickoff
+        agent_names = selected_sources + ["sentiment", "synthesizer"]
+        for name in agent_names:
+            if on_agent_start:
+                try:
+                    on_agent_start(name)
+                except Exception:
+                    pass
+
         result = crew.kickoff()
+
+        # Notify completion for all agents
+        for name in agent_names:
+            if on_agent_complete:
+                try:
+                    on_agent_complete(name, "Completed")
+                except Exception:
+                    pass
 
         # Parse result into list of ideas
         return self._parse_results(result, run_id)

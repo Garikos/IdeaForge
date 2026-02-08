@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import time
 from typing import Any
 
 import structlog
@@ -18,9 +17,19 @@ from ..api.ws.events import (
 )
 from ..api.ws.manager import ws_manager
 from ..config import AGENT_REGISTRY
-from ..core.events import event_bus
 
 logger = structlog.get_logger()
+
+
+def _make_callback(loop: asyncio.AbstractEventLoop, coro_fn):
+    """Create a thread-safe callback that schedules a coroutine on the event loop."""
+    def callback(*args):
+        future = asyncio.run_coroutine_threadsafe(coro_fn(*args), loop)
+        try:
+            future.result(timeout=5)
+        except Exception as e:
+            logger.warning("Callback failed", error=str(e))
+    return callback
 
 
 class Coordinator:
@@ -33,17 +42,7 @@ class Coordinator:
         sources: list[str],
         llm_provider: str,
     ) -> list[dict[str, Any]]:
-        """Run a research pipeline with selected sources.
-
-        Args:
-            run_id: Unique identifier for this research run.
-            query: User's research query.
-            sources: List of source IDs to use.
-            llm_provider: LLM provider to use.
-
-        Returns:
-            List of discovered business ideas.
-        """
+        """Run a research pipeline with selected sources."""
         logger.info("Starting research", run_id=run_id, query=query, sources=sources)
 
         # Broadcast start event
@@ -53,8 +52,19 @@ class Coordinator:
         )
 
         try:
-            # Import here to avoid circular imports
             from .crews.research_crew import ResearchCrew
+
+            # Capture current event loop for thread-safe callbacks
+            loop = asyncio.get_running_loop()
+
+            async def on_start(name):
+                await ws_manager.broadcast("research", agent_started(run_id, name))
+
+            async def on_complete(name, summary):
+                await ws_manager.broadcast("research", agent_completed(run_id, name, summary))
+
+            async def on_error(name, error):
+                await ws_manager.broadcast("research", agent_failed(run_id, name, error))
 
             crew = ResearchCrew()
             results = await asyncio.to_thread(
@@ -63,15 +73,9 @@ class Coordinator:
                 selected_sources=sources,
                 llm_provider=llm_provider,
                 run_id=run_id,
-                on_agent_start=lambda name: asyncio.run(
-                    ws_manager.broadcast("research", agent_started(run_id, name))
-                ),
-                on_agent_complete=lambda name, summary: asyncio.run(
-                    ws_manager.broadcast("research", agent_completed(run_id, name, summary))
-                ),
-                on_agent_error=lambda name, error: asyncio.run(
-                    ws_manager.broadcast("research", agent_failed(run_id, name, error))
-                ),
+                on_agent_start=_make_callback(loop, on_start),
+                on_agent_complete=_make_callback(loop, on_complete),
+                on_agent_error=_make_callback(loop, on_error),
             )
 
             await ws_manager.broadcast(
